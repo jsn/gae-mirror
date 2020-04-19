@@ -3,7 +3,6 @@ package main
 import (
     "log"
     "strings"
-    "net"
     "net/http"
     "net/http/httputil"
     "net/url"
@@ -24,14 +23,8 @@ func makeHandler(upstream string) func (w http.ResponseWriter, r *http.Request){
     proxy := httputil.NewSingleHostReverseProxy(url)
 
     return func (w http.ResponseWriter, r *http.Request) {
-	if clientIP, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
-            r.Header.Set("X-Real-IP", clientIP)
-            if prior, ok := r.Header["X-Forwarded-For"]; ok {
-                clientIP = strings.Join(prior, ", ") + ", " + clientIP
-            }
-            r.Header.Set("X-Forwarded-For", clientIP)
-	} else {
-            r.Header.Set("X-Real-IP", r.RemoteAddr)
+        if prior, ok := r.Header["X-Forwarded-For"]; ok {
+            r.Header.Set("X-Real-IP", strings.Join(prior, ", "))
         }
         r.Header.Set("X-Proxy-Version", "gae-mirror/0.0.1")
         // Update the headers to allow for SSL redirection
